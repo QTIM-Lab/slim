@@ -7,7 +7,9 @@ import {
   FaHandPaper,
   FaHandPointer,
   FaTrash,
-  FaSave
+  FaSave,
+  FaArrowLeft,
+  FaArrowRight
 } from 'react-icons/fa'
 import {
   Button as Btn,
@@ -20,6 +22,7 @@ import {
   Modal,
   Layout,
   Row,
+  Col,
   Select,
   Space,
   Tooltip
@@ -358,6 +361,7 @@ interface SlideViewerProps extends RouteComponentProps {
     email: string
   }
   selectedPresentationStateUID?: string
+  handleToggleSiderLeft: Function
 }
 
 interface SlideViewerState {
@@ -401,6 +405,7 @@ interface SlideViewerState {
     }
   }
   loadingFrames: Set<string>
+  rightSiderWidth: number
 }
 
 /**
@@ -531,6 +536,10 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
     this.handleAnnotationGroupVisibilityChange = this.handleAnnotationGroupVisibilityChange.bind(this)
     this.handleAnnotationGroupStyleChange = this.handleAnnotationGroupStyleChange.bind(this)
     this.handleGoTo = this.handleGoTo.bind(this)
+
+    this.handleToggleSiderLeftLocal = this.handleToggleSiderLeftLocal.bind(this)
+    this.handleToggleSiderRight = this.handleToggleSiderRight.bind(this)
+
     this.handleXCoordinateSelection = this.handleXCoordinateSelection.bind(this)
     this.handleYCoordinateSelection = this.handleYCoordinateSelection.bind(this)
     this.handleMagnificationSelection = this.handleMagnificationSelection.bind(this)
@@ -600,7 +609,8 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
       areRoisHidden: false,
       pixelDataStatistics: {},
       selectedPresentationStateUID: this.props.selectedPresentationStateUID,
-      loadingFrames: new Set()
+      loadingFrames: new Set(),
+      rightSiderWidth: 300
     }
   }
 
@@ -2825,6 +2835,30 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
     }
   }
 
+  handleToggleSiderRight (): void {
+    this.setState((prevState) => ({
+        rightSiderWidth: prevState.rightSiderWidth === 0 ? 300 : 0,
+    }));
+
+    setTimeout(() => {
+        this.volumeViewer.resize();
+        // this.volumeViewer.collapseOverviewMap()
+    }, 250);
+    
+  }
+
+  handleToggleSiderLeftLocal (): void {
+    
+    this.props.handleToggleSiderLeft()
+
+    setTimeout(() => {
+        this.volumeViewer.resize();
+        // this.volumeViewer.toggleOverviewMap()
+        // this.volumeViewer.expandOverviewMap()
+    }, 250);
+  }
+
+
   render (): React.ReactNode {
     const rois: dmv.roi.ROI[] = []
     const segments: dmv.segment.Segment[] = []
@@ -3217,15 +3251,38 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
         key='go-to-slide-position-button'
       />
     ]
+    const hidePanelTools = [
+        <Button
+        icon={FaArrowLeft}
+        onClick={this.handleToggleSiderLeftLocal}
+        key='toggle-sider-left-button'
+      />,
+      <Button
+        icon={FaArrowRight}
+        onClick={this.handleToggleSiderRight}
+        key='toggle-sider-right-button'
+      />
+    ]
     if (this.props.enableAnnotationTools) {
       toolbar = (
-        <Row justify='start'>
-          {annotationTools.map((item, i) => {
-            return <React.Fragment key={i}>{item}</React.Fragment>
-          })}
-          {controlTools.map((item, i) => {
-            return <React.Fragment key={i}>{item}</React.Fragment>
-          })}
+        <Row justify='center'>
+            <Col style={{ marginRight: 'auto' }}>
+            {hidePanelTools[0]}
+            </Col>
+
+            <Col>
+                {annotationTools.map((item, i) => {
+                    return <React.Fragment key={i}>{item}</React.Fragment>
+                })}
+
+                {controlTools.map((item, i) => {
+                    return <React.Fragment key={i}>{item}</React.Fragment>
+                })}
+            </Col>
+          
+            <Col style={{ marginLeft: 'auto' }}>
+            {hidePanelTools[1]}
+            </Col>
         </Row>
       )
       toolbarHeight = '50px'
@@ -3494,7 +3551,7 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
         </Layout.Content>
 
         <Layout.Sider
-          width={300}
+          width={this.state.rightSiderWidth}
           reverseArrow
           style={{
             borderLeft: 'solid',

@@ -28,7 +28,8 @@ function ParametrizedSlideViewer ({
   app,
   preload,
   enableAnnotationTools,
-  annotations
+  annotations,
+  handleToggleSiderLeft
 }: {
   clients: { [key: string]: DicomWebManager }
   slides: Slide[]
@@ -42,6 +43,7 @@ function ParametrizedSlideViewer ({
   preload: boolean
   enableAnnotationTools: boolean
   annotations: AnnotationSettings[]
+  handleToggleSiderLeft: Function
 }): JSX.Element | null {
   const { studyInstanceUID, seriesInstanceUID } = useParams()
   const location = useLocation()
@@ -73,6 +75,7 @@ function ParametrizedSlideViewer ({
         enableAnnotationTools={enableAnnotationTools}
         app={app}
         user={user}
+        handleToggleSiderLeft={handleToggleSiderLeft}
       />
     )
   }
@@ -100,17 +103,20 @@ interface ViewerProps extends RouteComponentProps {
 interface ViewerState {
   slides: Slide[]
   isLoading: boolean
+  leftSiderWidth: number
 }
 
 class Viewer extends React.Component<ViewerProps, ViewerState> {
   state = {
     slides: [],
-    isLoading: true
+    isLoading: true,
+    leftSiderWidth: 0
   }
 
   constructor (props: ViewerProps) {
     super(props)
     this.handleSeriesSelection = this.handleSeriesSelection.bind(this)
+    this.handleToggleSiderLeft = this.handleToggleSiderLeft.bind(this)
   }
 
   componentDidMount (): void {
@@ -204,6 +210,12 @@ class Viewer extends React.Component<ViewerProps, ViewerState> {
     this.props.navigate(urlPath, { replace: true })
   }
 
+  handleToggleSiderLeft (): void {
+    this.setState((prevState) => ({
+      leftSiderWidth: prevState.leftSiderWidth === 0 ? 300 : 0,
+    }));
+  }
+
   render (): React.ReactNode {
     if (this.state.isLoading) {
       return null
@@ -243,7 +255,7 @@ class Viewer extends React.Component<ViewerProps, ViewerState> {
     return (
       <Layout style={{ height: '100%' }} hasSider>
         <Layout.Sider
-          width={300}
+          width={this.state.leftSiderWidth}
           style={{
             height: '100%',
             borderRight: 'solid',
@@ -288,6 +300,7 @@ class Viewer extends React.Component<ViewerProps, ViewerState> {
                 enableAnnotationTools={this.props.enableAnnotationTools}
                 app={this.props.app}
                 user={this.props.user}
+                handleToggleSiderLeft={this.handleToggleSiderLeft}
               />
             }
           />
