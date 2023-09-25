@@ -15,6 +15,7 @@ public/config/*
 !public/config/demo.js
 !public/config/local.js
 !public/config/preview.js
+!public/config/qtim_demo.js
 
 # misc
 .DS_Store
