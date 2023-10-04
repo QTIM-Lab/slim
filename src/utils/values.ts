@@ -43,6 +43,22 @@ function parseDateTime (value: string|null|undefined): string {
   return ''
 }
 
+function parseUnixTime (value: string|null|undefined): string {
+  if (value !== null && value !== undefined) {
+    const date = new Date(parseInt(value));
+    const datestring = date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+    });
+    return datestring
+  }
+  return ''
+}
+
 function parseSex (value: string|null|undefined): string {
   const lut: { [key: string]: string } = {
     F: 'Female',
@@ -55,4 +71,4 @@ function parseSex (value: string|null|undefined): string {
   return ''
 }
 
-export { parseDate, parseDateTime, parseName, parseSex, parseTime }
+export { parseDate, parseDateTime, parseName, parseSex, parseTime, parseUnixTime }

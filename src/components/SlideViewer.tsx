@@ -9,7 +9,8 @@ import {
   FaTrash,
   FaSave,
   FaArrowLeft,
-  FaArrowRight
+  FaArrowRight,
+  FaFileImage
 } from 'react-icons/fa'
 import {
   Button as Btn,
@@ -25,10 +26,13 @@ import {
   Col,
   Select,
   Space,
-  Tooltip
+  Tooltip,
+  Switch,
+  Slider
 } from 'antd'
 import { UndoOutlined, CheckOutlined, StopOutlined } from '@ant-design/icons'
-import * as dmv from 'dicom-microscopy-viewer'
+// import * as dmv from 'dicom-microscopy-viewer'
+import * as dmv from 'scott-dicom-microscopy-viewer'
 import * as dcmjs from 'dcmjs'
 import * as dwc from 'dicomweb-client'
 
@@ -388,6 +392,21 @@ interface SlideViewerState {
   isRoiModificationActive: boolean
   isRoiTranslationActive: boolean
   isGoToModalVisible: boolean
+  isImageAugmentationModalVisible: boolean // Scott
+  validImageAugmentationHueRange: number[] // Scott
+  validImageAugmentationSaturationRange: number[] // Scott
+  validImageAugmentationBrightnessRange: number[] // Scott
+  validImageAugmentationContrastRange: number[] // Scott
+  validImageAugmentationSharpenRange: number[] // Scott
+  isSelectedImageAugmentationHueValid: boolean // Scott
+  selectedImageAugmentationHue?: number // Scott
+  selectedImageAugmentationBrightness?: number // Scott
+  selectedImageAugmentationSaturation?: number // Scott
+  selectedImageAugmentationContrast?: number // Scott
+  selectedImageAugmentationSharpen?: number // Scott
+  selectedImageAugmentationDetectEdges?: boolean // Scott
+  selectedImageAugmentationNegative?: boolean // Scott
+
   isSelectedMagnificationValid: boolean
   isSelectedXCoordinateValid: boolean
   isSelectedYCoordinateValid: boolean
@@ -537,6 +556,18 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
     this.handleAnnotationGroupStyleChange = this.handleAnnotationGroupStyleChange.bind(this)
     this.handleGoTo = this.handleGoTo.bind(this)
 
+    // Scott
+    this.handleImageAugmentationButton = this.handleImageAugmentationButton.bind(this)
+    this.handleImageAugmentationCancellation = this.handleImageAugmentationCancellation.bind(this)
+    this.handleImageAugmentationCompletion = this.handleImageAugmentationCompletion.bind(this)
+    this.handleImageAugmentationHueSelection = this.handleImageAugmentationHueSelection.bind(this)
+    this.handleImageAugmentationBrightnessSelection = this.handleImageAugmentationBrightnessSelection.bind(this)
+    this.handleImageAugmentationSaturationSelection = this.handleImageAugmentationSaturationSelection.bind(this)
+    this.handleImageAugmentationContrastSelection = this.handleImageAugmentationContrastSelection.bind(this)
+    this.handleImageAugmentationSharpenSelection = this.handleImageAugmentationSharpenSelection.bind(this)
+    this.handleImageAugmentationDetectEdgesSelection = this.handleImageAugmentationDetectEdgesSelection.bind(this)
+    this.handleImageAugmentationNegativeSelection = this.handleImageAugmentationNegativeSelection.bind(this)
+    this.getLayoutContainer = this.getLayoutContainer.bind(this)
     this.handleToggleSiderLeftLocal = this.handleToggleSiderLeftLocal.bind(this)
     this.handleToggleSiderRight = this.handleToggleSiderRight.bind(this)
 
@@ -599,6 +630,20 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
       isRoiTranslationActive: false,
       isRoiModificationActive: false,
       isGoToModalVisible: false,
+      isImageAugmentationModalVisible: false, // Scott
+      validImageAugmentationHueRange: [0, 360], // Scott
+      validImageAugmentationBrightnessRange: [-1, 1], // Scott
+      validImageAugmentationSaturationRange: [-5, 5], // Scott
+      validImageAugmentationContrastRange: [-2, 2],
+      validImageAugmentationSharpenRange: [0, 3],
+      isSelectedImageAugmentationHueValid: false, // Scott
+      selectedImageAugmentationHue: 0, // Scott
+      selectedImageAugmentationBrightness: 0, // Scott
+      selectedImageAugmentationSaturation: 0, // Scott
+      selectedImageAugmentationContrast: 0, // Scott
+      selectedImageAugmentationSharpen: 0, // Scott
+      selectedImageAugmentationDetectEdges: false, // Scott
+      selectedImageAugmentationNegative: false, // Scott
       isSelectedXCoordinateValid: false,
       isSelectedYCoordinateValid: false,
       selectedXCoordinate: undefined,
@@ -1641,7 +1686,8 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
         isRoiTranslationActive: false,
         isRoiDrawingActive: false,
         isRoiModificationActive: false,
-        isGoToModalVisible: false
+        isGoToModalVisible: false,
+        isImageAugmentationModalVisible: false // Scott
       })
     } else if (event.altKey) {
       if (event.code === 'KeyD') {
@@ -1816,6 +1862,229 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
     }
   }
 
+  // Scott
+
+  handleImageAugmentationHueSelection (input: number): void {
+    console.log("input going in: ", input)
+    const start = this.state.validImageAugmentationHueRange[0]
+    const end = this.state.validImageAugmentationHueRange[1]
+    if (input >= start && input <= end) {
+      console.log('setting hue: ', input)
+      this.setState({
+        selectedImageAugmentationHue: input,
+      })
+      this.volumeViewer.setImageAugmentationHue(input)
+      return
+    }
+    this.setState({
+      selectedImageAugmentationHue: undefined,
+    })
+  }
+
+  handleImageAugmentationBrightnessSelection (input: number): void {
+    console.log("input going in: ", input)
+    const start = this.state.validImageAugmentationBrightnessRange[0]
+    const end = this.state.validImageAugmentationBrightnessRange[1]
+    if (input >= start && input <= end) {
+      console.log('setting brightness: ', input)
+      this.setState({
+        selectedImageAugmentationBrightness: input,
+      })
+      this.volumeViewer.setImageAugmentationBrightness(input)
+      return
+    }
+    this.setState({
+      selectedImageAugmentationBrightness: undefined,
+    })
+  }
+
+  handleImageAugmentationSaturationSelection (input: number): void {
+    console.log("input going in: ", input)
+    const start = this.state.validImageAugmentationSaturationRange[0]
+    const end = this.state.validImageAugmentationSaturationRange[1]
+    if (input >= start && input <= end) {
+      console.log('setting Saturation: ', input)
+      this.setState({
+        selectedImageAugmentationSaturation: input,
+      })
+      this.volumeViewer.setImageAugmentationSaturation(input)
+      return
+    }
+    this.setState({
+      selectedImageAugmentationSaturation: undefined,
+    })
+  }
+
+  handleImageAugmentationContrastSelection (input: number): void {
+    console.log("input going in: ", input)
+    const start = this.state.validImageAugmentationContrastRange[0]
+    const end = this.state.validImageAugmentationContrastRange[1]
+    if (input >= start && input <= end) {
+      console.log('setting Contrast: ', input)
+      this.setState({
+        selectedImageAugmentationContrast: input,
+      })
+      this.volumeViewer.setImageAugmentationContrast(input)
+      return
+    }
+    this.setState({
+      selectedImageAugmentationContrast: undefined,
+    })
+  }
+
+  handleImageAugmentationSharpenSelection (input: number): void {
+    console.log("input going in: ", input)
+    const start = this.state.validImageAugmentationSharpenRange[0]
+    const end = this.state.validImageAugmentationSharpenRange[1]
+    if (input >= start && input <= end) {
+      console.log('setting Sharpen: ', input)
+      this.setState({
+        selectedImageAugmentationSharpen: input,
+      })
+      this.volumeViewer.setImageAugmentationSharpen(input)
+      return
+    }
+    this.setState({
+      selectedImageAugmentationSharpen: undefined,
+    })
+  }
+
+  handleImageAugmentationDetectEdgesSelection (input: boolean): void {
+    console.log("input going in: ", input)
+    this.setState({
+      selectedImageAugmentationDetectEdges: input,
+    })
+    this.volumeViewer.setImageAugmentationDetectEdges(input)
+    return
+  }
+
+  handleImageAugmentationNegativeSelection (input: boolean): void {
+    console.log("input going in: ", input)
+    this.setState({
+      selectedImageAugmentationNegative: input,
+    })
+    this.volumeViewer.setImageAugmentationNegative(input)
+    return
+  }
+
+  // handleImageAugmentationHueSelection (event: any): void {
+  //   console.log("event going in: ", event)
+  //   if (event != null) {
+  //     if (!!event.target?.value) {
+  //       const input = Number(event.target.value)
+  //       const start = this.state.validImageAugmentationHueRange[0]
+  //       const end = this.state.validImageAugmentationHueRange[1]
+  //       if (input >= start && input <= end) {
+  //         console.log('setting hue: ', input)
+  //         // this.volumeViewer.someFunction() // not sure if should go above or below setState...
+  //         this.setState({
+  //           selectedImageAugmentationHue: input,
+  //           isSelectedImageAugmentationHueValid: true
+  //           // selectedXCoordinate: x,
+  //           // isSelectedXCoordinateValid: true
+  //         })
+  //         // this.volumeViewer.someFunction() // not sure if should go above or below setState...
+  //         this.volumeViewer.setImageAugmentationHue(input)
+  //         return
+  //       }
+  //     }
+  //   }
+  //   this.setState({
+  //     selectedImageAugmentationHue: undefined,
+  //     isSelectedImageAugmentationHueValid: false
+  //     // selectedXCoordinate: undefined,
+  //     // isSelectedXCoordinateValid: false
+  //   })
+  // }
+
+  // handleImageAugmentationBrightnessSelection (event: any): void {
+  //   console.log("event going in: ", event)
+  //   if (event != null) {
+  //     if (!!event.target?.value) {
+  //       const input = Number(event.target.value)
+  //       const start = this.state.validImageAugmentationBrightnessRange[0]
+  //       const end = this.state.validImageAugmentationBrightnessRange[1]
+  //       if (input >= start && input <= end) {
+  //         console.log('setting brightness: ', input)
+  //         this.setState({
+  //           selectedImageAugmentationBrightness: input
+  //         })
+  //         this.volumeViewer.setImageAugmentationBrightness(input)
+  //         return
+  //       }
+  //     }
+  //   }
+  //   this.setState({
+  //     selectedImageAugmentationBrightness: undefined
+  //   })
+  // }
+
+  // handleImageAugmentationSaturationSelection (event: any): void {
+  //   console.log("event going in: ", event)
+  //   if (event != null) {
+  //     if (!!event.target?.value) {
+  //       const input = Number(event.target.value)
+  //       const start = this.state.validImageAugmentationSaturationRange[0]
+  //       const end = this.state.validImageAugmentationSaturationRange[1]
+  //       if (input >= start && input <= end) {
+  //         console.log('setting hue: ', input)
+  //         this.setState({
+  //           selectedImageAugmentationSaturation: input
+  //         })
+  //         this.volumeViewer.setImageAugmentationSaturation(input)
+  //         return
+  //       }
+  //     }
+  //   }
+  //   this.setState({
+  //     selectedImageAugmentationSaturation: undefined
+  //   })
+  // }
+
+  // handleImageAugmentationContrastSelection (event: any): void {
+  //   console.log("event going in: ", event)
+  //   if (event != null) {
+  //     if (!!event.target?.value) {
+  //       const input = Number(event.target.value)
+  //       const start = this.state.validImageAugmentationContrastRange[0]
+  //       const end = this.state.validImageAugmentationContrastRange[1]
+  //       if (input >= start && input <= end) {
+  //         console.log('setting contrast: ', input)
+  //         this.setState({
+  //           selectedImageAugmentationContrast: input
+  //         })
+  //         this.volumeViewer.setImageAugmentationContrast(input)
+  //         return
+  //       }
+  //     }
+  //   }
+  //   this.setState({
+  //     selectedImageAugmentationContrast: undefined
+  //   })
+  // }
+
+  // handleImageAugmentationSharpenSelection (event: any): void {
+  //   console.log("event going in: ", event)
+  //   if (event != null) {
+  //     if (!!event.target?.value) {
+  //       const input = Number(event.target.value)
+  //       const start = this.state.validImageAugmentationSharpenRange[0]
+  //       const end = this.state.validImageAugmentationSharpenRange[1]
+  //       if (input >= start && input <= end) {
+  //         console.log('setting hue: ', input)
+  //         this.setState({
+  //           selectedImageAugmentationSharpen: input
+  //         })
+  //         this.volumeViewer.setImageAugmentationSharpen(input)
+  //         return
+  //       }
+  //     }
+  //   }
+  //   this.setState({
+  //     selectedImageAugmentationSharpen: undefined
+  //   })
+  // }
+
   /**
    * Handler that gets called when an evaluation has been cleared for an
    * annotation.
@@ -1957,6 +2226,56 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
       selectedMagnification: undefined
     })
   }
+
+
+
+  // Scott
+
+  /**
+   * Handler that gets called when annotation configuration has been completed.
+   */
+  handleImageAugmentationCompletion (): void {
+    console.log("augmentation complete")
+    // console.log(this.state)
+    // console.debug('complete annotation configuration')
+    const hue = this.state.selectedImageAugmentationHue
+    const brightness = this.state.selectedImageAugmentationBrightness
+    const saturation = this.state.selectedImageAugmentationSaturation
+    const contrast = this.state.selectedImageAugmentationContrast
+    const sharpen = this.state.selectedImageAugmentationSharpen
+    // still need to check for this but...
+    const detectEdges = this.state.selectedImageAugmentationDetectEdges
+    const negative = this.state.selectedImageAugmentationNegative
+    // const geometryType = this.state.selectedGeometryType
+    // const markup = this.state.selectedMarkup
+    // if (geometryType !== undefined && finding !== undefined) {
+    if (hue !== undefined && saturation !== undefined && brightness !== undefined && contrast !== undefined && sharpen !== undefined) {
+      // this.volumeViewer.activateDrawInteraction({ geometryType, markup })
+      this.setState({
+        isImageAugmentationModalVisible: false
+      })
+    } else {
+      NotificationMiddleware.onError(
+        NotificationMiddlewareContext.SLIM,
+        new CustomError(
+          errorTypes.VISUALIZATION,
+          'Could not complete annotation configuration'
+        )
+      )
+    }
+  }
+
+  /**
+   * Handler that gets called when annotation configuration has been cancelled.
+   */
+  handleImageAugmentationCancellation (): void {
+    console.debug('cancel annotation configuration')
+    this.setState({
+      isImageAugmentationModalVisible: false
+    })
+  }
+
+  
 
   /**
    * Handler that gets called when annotation configuration has been completed.
@@ -2670,7 +2989,8 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
         isRoiTranslationActive: false,
         isRoiDrawingActive: false,
         isRoiModificationActive: false,
-        isGoToModalVisible: false
+        isGoToModalVisible: false,
+        isImageAugmentationModalVisible: false // Scott
       })
     } else {
       console.info('activate drawing of ROIs')
@@ -2680,7 +3000,8 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
         isRoiDrawingActive: true,
         isRoiModificationActive: false,
         isRoiTranslationActive: false,
-        isGoToModalVisible: false
+        isGoToModalVisible: false,
+        isImageAugmentationModalVisible: false // Scott
       })
       this.volumeViewer.deactivateSelectInteraction()
       this.volumeViewer.deactivateSnapInteraction()
@@ -2758,8 +3079,42 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
       isReportModalVisible: false,
       isRoiTranslationActive: false,
       isRoiModificationActive: false,
+      isRoiDrawingActive: false,
+      isImageAugmentationModalVisible: false // Scott
+    })
+  }
+
+  handleImageAugmentationButton (): void {
+    console.log("Handling image augmentations...")
+    // this.volumeViewer.collapseOverviewMap()
+    // console.log("vol viewer: ", this.volumeViewer)
+    // this.volumeViewer.someFunction()
+    // console.log(this.volumeViewer.setImageAugmentation)
+    // this.volumeViewer.deactivateDrawInteraction()
+    // this.volumeViewer.deactivateModifyInteraction()
+    // this.volumeViewer.deactivateSnapInteraction()
+    // this.volumeViewer.deactivateTranslateInteraction()
+    // this.volumeViewer.deactivateSelectInteraction()
+    this.setState({
+      isImageAugmentationModalVisible: true, // Scott
+      isGoToModalVisible: false,
+      isAnnotationModalVisible: false,
+      isSelectedRoiModalVisible: false,
+      isReportModalVisible: false,
+      isRoiTranslationActive: false,
+      isRoiModificationActive: false,
       isRoiDrawingActive: false
     })
+  }
+
+  getLayoutContainer (): any {
+    // return document.getElementById('content-and-tools');
+    if (document.fullscreenElement !== null){
+      console.log("is full screen!")
+      return document.getElementById('content-and-tools');
+    }
+    console.log('not full screen')
+    return document.body
   }
 
   /**
@@ -2928,6 +3283,7 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
           onSelect={this.handleAnnotationFindingSelection}
           key='annotation-finding'
           defaultActiveFirstOption
+          getPopupContainer={this.getLayoutContainer}
         >
           {findingOptions}
         </Select>
@@ -2958,6 +3314,7 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
               allowClear
               onClear={this.handleAnnotationEvaluationClearance}
               defaultActiveFirstOption={false}
+              getPopupContainer={this.getLayoutContainer}
             >
               {evaluationOptions}
             </Select>
@@ -2974,6 +3331,7 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
             style={{ minWidth: 130 }}
             onSelect={this.handleAnnotationGeometryTypeSelection}
             key='annotation-geometry-type'
+            getPopupContainer={this.getLayoutContainer}
           >
             {geometryTypeOptions}
           </Select>
@@ -3249,6 +3607,12 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
         icon={FaCrosshairs}
         onClick={this.handleGoTo}
         key='go-to-slide-position-button'
+      />,
+      <Button
+        tooltip='Image Augmentations [Alt+None]'
+        icon={FaFileImage}
+        onClick={this.handleImageAugmentationButton}
+        key='image-augmentations-button'
       />
     ]
     const hidePanelTools = [
@@ -3444,17 +3808,145 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
 
     return (
       <Layout style={{ height: '100%' }} hasSider>
-        <Layout.Content style={{ height: '100%' }}>
+        <Layout.Content style={{ height: '100%' }} id='content-and-tools'>
           {toolbar}
 
           <div
             style={{
-              height: `calc(100% - ${toolbarHeight})`,
+              // height: `calc(100% - ${toolbarHeight})`,
+              height: `calc(100% - 25px)`,
               overflow: 'hidden',
               cursor: cursor
             }}
             ref={this.volumeViewportRef}
           />
+          
+          <Modal
+            visible={this.state.isImageAugmentationModalVisible}
+            title='Configure image augmentations'
+            onOk={this.handleImageAugmentationCompletion}
+            onCancel={this.handleImageAugmentationCancellation}
+            okText='Select'
+            getContainer={this.getLayoutContainer}
+          >
+            {/* <Space align='start' direction='vertical' style={{width: "100%"}}> */}
+              <Row>
+                <Col span={8} style={{textAlign: "end", "paddingRight": "1em"}}>
+                  <label>Hue:</label>
+                </Col>
+                <Col span={8}>
+                  <Slider
+                    min={0}
+                    max={360}
+                    step={1}
+                    value={this.state.selectedImageAugmentationHue}
+                    onChange={this.handleImageAugmentationHueSelection}
+                  />
+                </Col>
+                <Col span={8} style={{"paddingLeft": "1em"}}>
+                  <span>{this.state.selectedImageAugmentationHue}</span>
+                </Col>
+              </Row>
+
+              <Row>
+                <Col span={8} style={{textAlign: "end", "paddingRight": "1em"}}>
+                  <label>Brightness:</label>
+                </Col>
+                <Col span={8}>
+                  <Slider
+                    min={-1}
+                    max={1}
+                    step={0.05}
+                    value={this.state.selectedImageAugmentationBrightness}
+                    onChange={this.handleImageAugmentationBrightnessSelection}
+                  />
+                </Col>
+                <Col span={8} style={{"paddingLeft": "1em"}}>
+                  <span>{this.state.selectedImageAugmentationBrightness}</span>
+                </Col>
+              </Row>
+
+              <Row>
+                <Col span={8} style={{textAlign: "end", "paddingRight": "1em"}}>
+                  <label>Saturation:</label>
+                </Col>
+                <Col span={8}>
+                  <Slider
+                    min={-5}
+                    max={5}
+                    step={0.1}
+                    value={this.state.selectedImageAugmentationSaturation}
+                    onChange={this.handleImageAugmentationSaturationSelection}
+                  />
+                </Col>
+                <Col span={8} style={{"paddingLeft": "1em"}}>
+                  <span>{this.state.selectedImageAugmentationSaturation}</span>
+                </Col>
+              </Row>
+
+              <Row>
+                <Col span={8} style={{textAlign: "end", "paddingRight": "1em"}}>
+                  <label>Contrast:</label>
+                </Col>
+                <Col span={8}>
+                  <Slider
+                    min={-2}
+                    max={2}
+                    step={0.1}
+                    value={this.state.selectedImageAugmentationContrast}
+                    onChange={this.handleImageAugmentationContrastSelection}
+                  />
+                </Col>
+                <Col span={8} style={{"paddingLeft": "1em"}}>
+                  <span>{this.state.selectedImageAugmentationContrast}</span>
+                </Col>
+              </Row>
+
+              <Row>
+                <Col span={8} style={{textAlign: "end", "paddingRight": "1em"}}>
+                  <label>Sharpness:</label>
+                </Col>
+                <Col span={8}>
+                  <Slider
+                    min={0}
+                    max={3}
+                    step={0.1}
+                    value={this.state.selectedImageAugmentationSharpen}
+                    onChange={this.handleImageAugmentationSharpenSelection}
+                  />
+                </Col>
+                <Col span={8} style={{"paddingLeft": "1em"}}>
+                  <span>{this.state.selectedImageAugmentationSharpen}</span>
+                </Col>
+              </Row>
+
+              <Row>
+                <Col span={8} style={{textAlign: "end", "paddingRight": "1em"}}>
+                  <label>Detect Edges:</label>
+                </Col>
+                <Col span={8}>
+                  <Switch
+                  checked={this.state.selectedImageAugmentationDetectEdges}
+                  onChange={this.handleImageAugmentationDetectEdgesSelection}
+                  />
+                </Col>
+              </Row>
+
+              <Row>
+                <Col span={8} style={{textAlign: "end", "paddingRight": "1em"}}>
+                  <label>Show Negative:</label>
+                </Col>
+                <Col span={8}>
+                  <Switch
+                  checked={this.state.selectedImageAugmentationNegative}
+                  onChange={this.handleImageAugmentationNegativeSelection}
+                  />
+                </Col>
+              </Row>
+
+
+            {/* </Space> */}
+          </Modal>
 
           <Modal
             visible={this.state.isAnnotationModalVisible}
@@ -3462,6 +3954,7 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
             onOk={this.handleAnnotationConfigurationCompletion}
             onCancel={this.handleAnnotationConfigurationCancellation}
             okText='Select'
+            getContainer={this.getLayoutContainer}
           >
             <Space align='start' direction='vertical'>
               {annotationConfigurations}
@@ -3474,6 +3967,7 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
             onCancel={this.handleRoiSelectionCancellation}
             maskClosable
             footer={null}
+            getContainer={this.getLayoutContainer}
           >
             <Space align='start' direction='vertical'>
               {selectedRoiInformation}
@@ -3486,6 +3980,7 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
             onOk={this.handleSlidePositionSelection}
             onCancel={this.handleSlidePositionSelectionCancellation}
             okText='Select'
+            getContainer={this.getLayoutContainer}
           >
             <Space align='start' direction='vertical'>
               <InputNumber
@@ -3545,6 +4040,7 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
             onOk={this.handleReportVerification}
             onCancel={this.handleReportCancellation}
             okText='Save'
+            getContainer={this.getLayoutContainer}
           >
             {report}
           </Modal>

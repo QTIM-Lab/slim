@@ -38,8 +38,8 @@ module.exports = {
          * for the viewer.
         */
         alias: {
-          'dicom-microscopy-viewer':
-            'dicom-microscopy-viewer/dist/dynamic-import/dicomMicroscopyViewer.min.js'
+          'scott-dicom-microscopy-viewer':
+            'scott-dicom-microscopy-viewer/dist/dynamic-import/dicomMicroscopyViewer.min.js'
         }
       }
       config.plugins.push(
@@ -47,7 +47,7 @@ module.exports = {
         new CopyWebpackPlugin({
           patterns: [
             {
-              from: './node_modules/dicom-microscopy-viewer/dist/dynamic-import',
+              from: './node_modules/scott-dicom-microscopy-viewer/dist/dynamic-import',
               to: './static/js'
             }
           ]

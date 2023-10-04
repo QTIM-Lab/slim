@@ -5,11 +5,12 @@ import { FilterConfirmProps } from 'antd/es/table/interface'
 import { SearchOutlined } from '@ant-design/icons'
 import DicomWebManager from '../DicomWebManager'
 
-import * as dmv from 'dicom-microscopy-viewer'
+// import * as dmv from 'dicom-microscopy-viewer'
+import * as dmv from 'scott-dicom-microscopy-viewer'
 
 import { StorageClasses } from '../data/uids'
 import { withRouter, RouteComponentProps } from '../utils/router'
-import { parseDate, parseName, parseSex, parseTime } from '../utils/values'
+import { parseDate, parseName, parseSex, parseTime, parseUnixTime } from '../utils/values'
 import { CustomError, errorTypes } from '../utils/CustomError'
 import NotificationMiddleware, {
   NotificationMiddlewareContext
@@ -53,8 +54,27 @@ class Worklist extends React.Component<WorklistProps, WorklistState> {
       this.setState({
         numStudies: studies.length,
         studies: studies.slice(0, this.state.pageSize).map(study => {
+          console.log("study in loop: ", study)
           const { dataset } = dmv.metadata.formatMetadata(study)
-          return dataset as dmv.metadata.Study
+          const datasetAsStudy = dataset as dmv.metadata.Study
+          // const cookie = document.cookie.match('(^|;)\\s*cookieName\\s*=\\s*([^;]+)')?.pop();
+          const cookie = document.cookie.match(`(^|;)\\s*${datasetAsStudy.StudyInstanceUID}\\s*=\\s*([^;]+)`)?.pop();
+          if (cookie) {
+            // setCookieValue(cookie);
+            console.log("cookie: ", cookie)
+            datasetAsStudy.LastAnnotated = cookie
+          }
+          // if (datasetAsStudy.PatientID === "PAVE1") {
+          //   console.log("pave 1 found")
+          //   datasetAsStudy.LastAnnotated = '20231003010101'
+          // }
+          return datasetAsStudy
+          // const dataset: dmv.metadata.Study = dmv.metadata.formatMetadata(study)
+          // const { dataset }: dmv.metadata.Study = dmv.metadata.formatMetadata(study)
+          // const dsAsStudy = dataset as dmv.metadata.Study
+          // console.log("dataset in loop: ", dataset)
+          // console.log("dataset property: ", dsAsStudy?.PatientID)
+          // return dataset as dmv.metadata.Study
         })
       })
     })
@@ -81,6 +101,8 @@ class Worklist extends React.Component<WorklistProps, WorklistState> {
   }
 
   handleClick (event: React.SyntheticEvent, study: dmv.metadata.Study): void {
+    const timestamp = new Date().getTime();
+    document.cookie = `${study.StudyInstanceUID}=${timestamp}; expires=2023-10-04T18:41:56Z`;
     this.props.navigate(`/studies/${study.StudyInstanceUID}`)
   }
 
@@ -168,30 +190,36 @@ class Worklist extends React.Component<WorklistProps, WorklistState> {
 
   render (): React.ReactNode {
     const columns: ColumnsType<dmv.metadata.Study> = [
-      {
-        title: 'Accession Number',
-        dataIndex: 'AccessionNumber',
-        ...this.getColumnSearchProps('AccessionNumber')
-      },
-      {
-        title: 'Study ID',
-        dataIndex: 'StudyID',
-        ...this.getColumnSearchProps('StudyID')
-      },
-      {
-        title: 'Study Date',
-        dataIndex: 'StudyDate',
-        render: (value: string): string => parseDate(value)
-      },
-      {
-        title: 'Study Time',
-        dataIndex: 'StudyTime',
-        render: (value: string): string => parseTime(value)
-      },
+      // {
+      //   title: 'Accession Number',
+      //   dataIndex: 'AccessionNumber',
+      //   ...this.getColumnSearchProps('AccessionNumber')
+      // },
+      // {
+      //   title: 'Study ID',
+      //   dataIndex: 'StudyID',
+      //   ...this.getColumnSearchProps('StudyID')
+      // },
+      // {
+      //   title: 'Study Date',
+      //   dataIndex: 'StudyDate',
+      //   render: (value: string): string => parseDate(value)
+      // },
+      // {
+      //   title: 'Study Time',
+      //   dataIndex: 'StudyTime',
+      //   render: (value: string): string => parseTime(value)
+      // },
       {
         title: 'Patient ID',
         dataIndex: 'PatientID',
         ...this.getColumnSearchProps('PatientID')
+      },
+      // // Scott add:
+      {
+        title: 'Last Annotated',
+        dataIndex: 'LastAnnotated',
+        render: (value: string): string => parseUnixTime(value)
       },
       {
         title: "Patient's Name",
@@ -199,21 +227,21 @@ class Worklist extends React.Component<WorklistProps, WorklistState> {
         render: (value: dmv.metadata.PersonName): string => parseName(value),
         ...this.getColumnSearchProps('PatientName')
       },
-      {
-        title: "Patient's Sex",
-        dataIndex: 'PatientSex',
-        render: (value: string): string => parseSex(value)
-      },
-      {
-        title: "Patient's Birthdate",
-        dataIndex: 'PatientBirthDate',
-        render: (value: string): string => parseDate(value)
-      },
-      {
-        title: "Referring Physician's Name",
-        dataIndex: 'ReferringPhysicianName',
-        render: (value: dmv.metadata.PersonName): string => parseName(value)
-      },
+      // {
+      //   title: "Patient's Sex",
+      //   dataIndex: 'PatientSex',
+      //   render: (value: string): string => parseSex(value)
+      // },
+      // {
+      //   title: "Patient's Birthdate",
+      //   dataIndex: 'PatientBirthDate',
+      //   render: (value: string): string => parseDate(value)
+      // },
+      // {
+      //   title: "Referring Physician's Name",
+      //   dataIndex: 'ReferringPhysicianName',
+      //   render: (value: dmv.metadata.PersonName): string => parseName(value)
+      // },
       {
         title: 'Modalities in Study',
         dataIndex: 'ModalitiesInStudy',
@@ -242,6 +270,8 @@ class Worklist extends React.Component<WorklistProps, WorklistState> {
       },
       total: this.state.numStudies
     }
+
+    console.log("SCOTT STUDIES: ", this.state.studies)
 
     return (
       <Table<dmv.metadata.Study>
