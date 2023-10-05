@@ -102,7 +102,7 @@ class Worklist extends React.Component<WorklistProps, WorklistState> {
 
   handleClick (event: React.SyntheticEvent, study: dmv.metadata.Study): void {
     const timestamp = new Date().getTime();
-    document.cookie = `${study.StudyInstanceUID}=${timestamp}; expires=2023-10-04T18:41:56Z`;
+    document.cookie = `${study.StudyInstanceUID}=${timestamp}; expires=2024-10-04T18:41:56Z`;
     this.props.navigate(`/studies/${study.StudyInstanceUID}`)
   }
 
