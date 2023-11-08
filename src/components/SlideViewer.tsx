@@ -3113,7 +3113,7 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
       console.log("is full screen!")
       return document.getElementById('content-and-tools');
     }
-    console.log('not full screen')
+    // console.log('not full screen')
     return document.body
   }
 
@@ -3138,12 +3138,25 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
         message.info('Annotation was removed')
       })
-      this.setState({
-        selectedRoiUIDs: new Set(),
-        isRoiTranslationActive: false,
-        isRoiDrawingActive: false,
-        isRoiModificationActive: false
-      })
+      // handle the edge case where, if visible ROIs had only 1, and it was selected, want a fresh
+      // visible ROI UIDs to clear the save thing
+      if (this.state.visibleRoiUIDs.size === 1) {
+        this.setState({
+          visibleRoiUIDs: new Set(),
+          selectedRoiUIDs: new Set(),
+          isRoiTranslationActive: false,
+          isRoiDrawingActive: false,
+          isRoiModificationActive: false
+        })
+      } else {
+        this.setState({
+          selectedRoiUIDs: new Set(),
+          isRoiTranslationActive: false,
+          isRoiDrawingActive: false,
+          isRoiModificationActive: false
+        })
+      }
+      
     } else {
       this.state.visibleRoiUIDs.forEach(uid => {
         console.info(`remove ROI "${uid}"`)
@@ -3599,6 +3612,7 @@ class SlideViewer extends React.Component<SlideViewerProps, SlideViewerState> {
         icon={FaSave}
         onClick={this.handleReportGeneration}
         key='generate-report-button'
+        isSelected={this.state.visibleRoiUIDs.size > 0}
       />
     ]
     const controlTools = [
